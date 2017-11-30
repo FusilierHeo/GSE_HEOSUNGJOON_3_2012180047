@@ -131,12 +131,54 @@ COLORS Object::NormalizationColor(COLORS color)
 	return color;
 }
 
-void Object::DrawObject(int texturesNum)
+void Object::DrawObject(int texturesNum, float time)
 {
-	if (texturesNum == 0)
-		renderer->DrawSolidRect(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a);
+	if (texturesNum == 0) 
+	{
+		renderer->DrawSolidRect(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a,renderLevel);
+		DrawGauge();
+	}
+	else if (state == OBJECT_CHARACTER)
+	{
+		renderer->DrawTexturedRectSeq(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a, texturesNum, aniCount, 0, CHARACTER_ANIMATION_COUNT, 1, renderLevel);
+		DrawGauge();
+	}
+	else if (state == OBJECT_BULLET)
+	{
+		renderer->DrawParticle(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a, -direction.x, -direction.y, texturesNum, particleTime);
+		particleTime += time;
+	}
 	else
-		renderer->DrawTexturedRect(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a, texturesNum);
+	{
+		renderer->DrawTexturedRect(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a, texturesNum, renderLevel);
+		DrawGauge();
+	}
+}
+
+void Object::DrawGauge()
+{
+	if (state == OBJECT_BUILDING)
+	{
+		if (team == Team::Team_1)
+		{
+			renderer->DrawSolidRectGauge(pos.x, pos.y + size/2 + 10, pos.z, size, 10, 1, 0, 0, 1, (float)(life / BUILDING_HP), 0);
+		}
+		else if (team == Team::Team_2)
+		{
+			renderer->DrawSolidRectGauge(pos.x, pos.y + size/2 + 10, pos.z, size, 10, 0, 0, 1, 1, (float)(life / BUILDING_HP), 0);
+		}
+	}
+	else if (state == OBJECT_CHARACTER)
+	{
+		if (team == Team::Team_1)
+		{
+			renderer->DrawSolidRectGauge(pos.x, pos.y + size/2 + 10, pos.z, size, 10, 1, 0, 0, 1, (float)(life / CHARACTER_HP), 0);
+		}
+		else if (team == Team::Team_2)
+		{
+			renderer->DrawSolidRectGauge(pos.x, pos.y + size/2 + 10, pos.z, size, 10, 0, 0, 1, 1, (float)(life / CHARACTER_HP), 0);
+		}
+	}
 }
 
 
@@ -149,8 +191,15 @@ void Object::Update(float time)
 {
 	if (state != OBJECT_BUILDING)
 		lifeTime -= time;
-	if (state == OBJECT_BUILDING || state == OBJECT_CHARACTER)
+	if (state == OBJECT_BUILDING)
 	{
+		attackDelay += time;
+	}
+	if (state == OBJECT_CHARACTER)
+	{
+		aniCount++;
+		if (aniCount >= CHARACTER_ANIMATION_COUNT)
+			aniCount = 0;
 		attackDelay += time;
 	}
 	MoveUpdate(time);
