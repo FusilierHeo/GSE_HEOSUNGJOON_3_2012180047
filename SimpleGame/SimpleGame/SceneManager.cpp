@@ -1,23 +1,21 @@
+#define NOMINMAX
 #include "stdafx.h"
 #include "SceneManager.h"
+#include <limits>
 #include <random>
-// ========== minwindef.h
-
-#ifndef NOMINMAX
 
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
-
 #ifndef min
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
 
-#endif  /* NOMINMAX */
-
 
 void SceneManager::Init()
 {
+	m_sound = new Sound();
+
 	buildingTextures1 = pRenderer->CreatePngTexture("./Textures/Test.png");
 	buildingTextures2 = pRenderer->CreatePngTexture("./Textures/Test2.png");
 	backgroundTextures = pRenderer->CreatePngTexture("./Textures/background.png");
@@ -25,6 +23,10 @@ void SceneManager::Init()
 	characterTextures2 = pRenderer->CreatePngTexture("./Textures/character2.png");
 	bulletTextures1 = pRenderer->CreatePngTexture("./Textures/Bullet1.png");
 	bulletTextures2 = pRenderer->CreatePngTexture("./Textures/Bullet2.png");
+
+	soundBG = m_sound->CreateSound("./Dependencies/SoundSamples/MF-W-90.XM");
+	soundSword = m_sound->CreateSound("./Dependencies/SoundSamples/sword.mp3");
+	m_sound->PlaySound(soundBG, true, 0.2f);
 
 	NewBuilding(100, 75, Team::Team_1);
 	NewBuilding(250, 100, Team::Team_1);
@@ -91,6 +93,7 @@ void SceneManager::Update(float time)
 		}
 		timecount = 0;
 	}
+
 }
 
 void SceneManager::NewObject(int x, int y, COLORS colors, float size)
@@ -134,9 +137,9 @@ void SceneManager::NewCharacter(int x, int y, Team team)
 void SceneManager::NewBullet(int x, int y, Team team)
 {
 	if (team == Team::Team_1)
-		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(1, 1, 1, 1), BULLET_SIZE));
+		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(5, 1, 1, 1), BULLET_SIZE));
 	else if(team == Team::Team_2)
-		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(1, 1, 1, 1), BULLET_SIZE));
+		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(7, 1, 1, 1), BULLET_SIZE));
 	int index = manager.size() - 1;
 	float dx = GetRandom();
 	float dy = GetRandom();
@@ -275,24 +278,28 @@ int SceneManager::CollisionEffect(int Obj1, int Obj2)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
+			m_sound->PlaySound(soundSword, false, 0.6f);
 			return (Obj2 - 1);
 		}
 		else if (manager[Obj1]->GetState() == OBJECT_BUILDING && manager[Obj2]->GetState() == OBJECT_BULLET)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
+			m_sound->PlaySound(soundSword, false, 0.4f);
 			return (Obj2 - 1);
 		}
 		else if (manager[Obj1]->GetState() == OBJECT_CHARACTER && manager[Obj2]->GetState() == OBJECT_BULLET)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
+			m_sound->PlaySound(soundSword, false, 0.2f);
 			return (Obj2 - 1);
 		}
 		else if (manager[Obj1]->GetState() == OBJECT_CHARACTER && manager[Obj2]->GetState() == OBJECT_ARROW)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
+			m_sound->PlaySound(soundSword, false, 0.3f);
 			return (Obj2 - 1);
 		}
 	}
