@@ -1,12 +1,10 @@
 #pragma once
 #pragma comment(lib, "winmm.lib") 
 
-#define NOMINMAX
-
 #define CHARACTER_HP 100
-#define CHARACTER_SIZE 30
-#define CHARACTER_SPEED 300
-#define CHARACTER_ANIMATION_COUNT 16
+#define CHARACTER_SIZE 50
+#define CHARACTER_SPEED 100
+#define CHARACTER_ANIMATION_COUNT 8
 
 #define BUILDING_HP 500
 #define BUILDING_SPEED 600
@@ -20,19 +18,23 @@
 #define ARROW_SPEED 100
 #define ARROW_SIZE 4
 
-#ifdef max
-#undef max
+#ifndef NOMINMAX
+
+#ifndef max
+#define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
-#ifdef min
-#undef min
+
+#ifndef min
+#define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
+
+#endif  /* NOMINMAX */
 
 #include "targetver.h"
 #include <stdio.h>
 #include <tchar.h>
 #include <iostream>
 #include "Sound.h"
-
 
 using namespace std;
 

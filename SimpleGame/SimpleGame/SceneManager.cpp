@@ -1,31 +1,35 @@
-#define NOMINMAX
 #include "stdafx.h"
 #include "SceneManager.h"
-#include <limits>
 #include <random>
+#ifndef NOMINMAX
 
 #ifndef max
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 #endif
+
 #ifndef min
 #define min(a,b)            (((a) < (b)) ? (a) : (b))
 #endif
+
+#endif  /* NOMINMAX */
 
 
 void SceneManager::Init()
 {
 	m_sound = new Sound();
 
-	buildingTextures1 = pRenderer->CreatePngTexture("./Textures/Test.png");
+	int temp = pRenderer->CreatePngTexture("./Textures/Test1.png");
+	buildingTextures1 = pRenderer->CreatePngTexture("./Textures/Test1.png");
 	buildingTextures2 = pRenderer->CreatePngTexture("./Textures/Test2.png");
 	backgroundTextures = pRenderer->CreatePngTexture("./Textures/background.png");
 	characterTextures1 = pRenderer->CreatePngTexture("./Textures/character1.png");
 	characterTextures2 = pRenderer->CreatePngTexture("./Textures/character2.png");
 	bulletTextures1 = pRenderer->CreatePngTexture("./Textures/Bullet1.png");
 	bulletTextures2 = pRenderer->CreatePngTexture("./Textures/Bullet2.png");
+	snowTextures = pRenderer->CreatePngTexture("./Textures/snow2.png");
 
 	soundBG = m_sound->CreateSound("./Dependencies/SoundSamples/MF-W-90.XM");
-	soundSword = m_sound->CreateSound("./Dependencies/SoundSamples/sword.mp3");
+	soundExplosion = m_sound->CreateSound("./Dependencies/SoundSamples/explosion.wav");
 	m_sound->PlaySound(soundBG, true, 0.2f);
 
 	NewBuilding(100, 75, Team::Team_1);
@@ -51,23 +55,19 @@ void SceneManager::Update(float time)
 	CollisionObject();
 	for (int i = 0; i< manager.size();i++)
 	{
-		//if (manager[i]->GetLifeTime() <= 0 && manager[i]->GetState() == 0)
-		//{
-		//	manager.erase(manager.begin() + i);
-		//	i--;
-		//}
 		if (manager[i]->GetLife() <= 0)
 		{
 			manager.erase(manager.begin() + i);
 			break;
 		}
-		if (manager[i]->GetState() == OBJECT_BUILDING)
+		else if (manager[i]->GetState() == OBJECT_BUILDING)
 		{
 			if (manager[i]->GetAttackDelay() >= 1.0f)
 			{
 				POS temp = manager[i]->GetPos();
 				NewBullet(temp.x + windowW, -temp.y + windowH, manager[i]->GetTeam());
 				manager[i]->SetAttackDelay(0);
+				cout << "bullet : " << ++debug << " index : " << manager.size() - 1 << endl;
 			}
 		}
 		else if (manager[i]->GetState() == OBJECT_CHARACTER)
@@ -79,11 +79,12 @@ void SceneManager::Update(float time)
 				manager[i]->SetAttackDelay(0);
 			}
 		}
-		if (i >= manager.size())
+		else if (i >= manager.size())
 		{
 			break;
 		}
 	}
+
 	timecount += time;
 	if (timecount >= fps)
 	{
@@ -137,9 +138,15 @@ void SceneManager::NewCharacter(int x, int y, Team team)
 void SceneManager::NewBullet(int x, int y, Team team)
 {
 	if (team == Team::Team_1)
-		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(5, 1, 1, 1), BULLET_SIZE));
-	else if(team == Team::Team_2)
-		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(7, 1, 1, 1), BULLET_SIZE));
+	{
+		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(1, 1, 1, 1), BULLET_SIZE));
+		cout << "call newBullet Team_1" << endl;
+	}
+	else if (team == Team::Team_2)
+	{
+		manager.push_back(new Object(pRenderer, POS(x - windowW, -y + windowH, 0), COLORS(1, 1, 1, 1), BULLET_SIZE));
+		cout << "call newBullet Team_2" << endl;
+	}
 	int index = manager.size() - 1;
 	float dx = GetRandom();
 	float dy = GetRandom();
@@ -166,6 +173,8 @@ void SceneManager::NewArrow(int x, int y, int id, Team team)
 void SceneManager::Draw(float time)
 {
 	pRenderer->DrawTexturedRect(0, 0, 0, windowH * 2, 1, 1, 1, 1, backgroundTextures, LEVEL_BACKGROUND);
+	pRenderer->DrawParticleClimate(0, 0, 0, 1, 1, 1, 1, 1, -0.2, -0.5, snowTextures, cloudTime, 0.3);
+
 	for (auto &d : manager)
 	{
 		switch (d->GetState())
@@ -185,6 +194,8 @@ void SceneManager::Draw(float time)
 		case OBJECT_ARROW:d->DrawObject(0,time); break;
 		}
 	}
+
+	cloudTime += time;
 }
 
 void SceneManager::CollisionObject()
@@ -278,28 +289,28 @@ int SceneManager::CollisionEffect(int Obj1, int Obj2)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
-			m_sound->PlaySound(soundSword, false, 0.6f);
+			m_sound->PlaySound(soundExplosion, false, 0.6f);
 			return (Obj2 - 1);
 		}
 		else if (manager[Obj1]->GetState() == OBJECT_BUILDING && manager[Obj2]->GetState() == OBJECT_BULLET)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
-			m_sound->PlaySound(soundSword, false, 0.4f);
+			m_sound->PlaySound(soundExplosion, false, 0.4f);
 			return (Obj2 - 1);
 		}
 		else if (manager[Obj1]->GetState() == OBJECT_CHARACTER && manager[Obj2]->GetState() == OBJECT_BULLET)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
-			m_sound->PlaySound(soundSword, false, 0.2f);
+			m_sound->PlaySound(soundExplosion, false, 0.2f);
 			return (Obj2 - 1);
 		}
 		else if (manager[Obj1]->GetState() == OBJECT_CHARACTER && manager[Obj2]->GetState() == OBJECT_ARROW)
 		{
 			manager[Obj1]->SetLife(manager[Obj1]->GetLife() - manager[Obj2]->GetLife());
 			manager.erase(manager.begin() + Obj2);
-			m_sound->PlaySound(soundSword, false, 0.3f);
+			m_sound->PlaySound(soundExplosion, false, 0.3f);
 			return (Obj2 - 1);
 		}
 	}

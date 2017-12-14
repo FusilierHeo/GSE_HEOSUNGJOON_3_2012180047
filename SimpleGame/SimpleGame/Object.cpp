@@ -145,7 +145,7 @@ void Object::DrawObject(int texturesNum, float time)
 	}
 	else if (state == OBJECT_BULLET)
 	{
-		renderer->DrawParticle(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a, -direction.x, -direction.y, texturesNum, particleTime);
+		renderer->DrawParticle(pos.x, pos.y, pos.z, size, color.r, color.g, color.b, color.a, -direction.x, -direction.y, texturesNum, particleTime,renderLevel);
 		particleTime += time;
 	}
 	else
@@ -157,8 +157,8 @@ void Object::DrawObject(int texturesNum, float time)
 
 void Object::DrawGauge()
 {
-	char buf[500];
-	sprintf_s(buf, "Health : %d", (int)life);
+	char buf[100];
+	sprintf_s(buf, "HP : %d", (int)life);
 	if (state == OBJECT_BUILDING)
 	{
 		if (team == Team::Team_1)
